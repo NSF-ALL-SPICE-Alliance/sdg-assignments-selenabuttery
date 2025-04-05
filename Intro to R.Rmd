@@ -1,0 +1,89 @@
+---
+title: "Intro to R"
+author: "Selena Buttery"
+date: "2025-04-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+my_name <- "Selena Buttery" # character strings are stored within quotations
+my_name
+
+my_age = 21
+my_age
+
+my_age + 5
+
+
+rm(my_name)
+```
+
+```{r}
+install.packages("here")
+library(here) # allows us to cut out long file paths, ensures reproducibility
+install.packages("janitor")
+library(janitor)
+```
+
+```{r}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
+
+sdr_data <- clean_names(sdr_data)
+
+head(sdr_data)
+```
+
+```{r}
+column_names <- as.list(colnames(sdr_data))
+
+dim(sdr_data)
+```
+
+```{r}
+install.packages("naniar")
+library(naniar) 
+```
+
+```{r}
+sdr_data %>% 
+  miss_var_summary() %>% 
+  arrange(desc(pct_miss))
+
+table(sdr_data$goal_7_dash) 
+
+table(sdr_data$goal_7_dash, sdr_data$regions_used_for_the_sdr)
+```
+
+Cleaning and Manipulating Data:
+
+```{r}
+sdr_data %>% 
+  select(goal_3_score, goal_4_score)
+```
+
+Challenge 2:
+
+```{r}
+sdr_data %>% 
+  filter(regions_used_for_the_sdr == "Oceania")
+```
+
+Challenge 3:
+
+```{r}
+oceania_data <- sdr_data %>% 
+  filter(regions_used_for_the_sdr == "Oceania")
+```
+
+```{r}
+sdr_data %>% 
+  group_by(regions_used_for_the_sdr) %>% 
+  summarise(mean_goal_7_score_by_region = mean(population_using_at_least_basic_drinking_water_services_percent))
+```
+
+```{r}
+sdr_data %>% 
+  select(country, population_with_access_to_clean_fuels_and_technology_for_cooking_percent, co2_emissions_from_fuel_combustion_per_total_electricity_output_mt_co2_t_wh, population_with_access_to_electricity_percent, renewable_energy_share_in_total_final_energy_consumption_percent) %>%
+  pivot_longer(cols = -country, names_to = "Indicator") # cols = -country means to pivot every column selected other than country
+```
