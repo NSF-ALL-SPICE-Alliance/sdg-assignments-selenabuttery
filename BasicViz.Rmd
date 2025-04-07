@@ -1,0 +1,80 @@
+---
+title: "Basic Viz"
+author: "Selena Buttery"
+date: "2025-04-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(janitor)
+
+install.packages("vembedr")
+library(vembedr)
+```
+
+```{r}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
+
+sdr_data <- sdr_data %>% 
+  clean_names()
+```
+
+```{r}
+ggplot(data = sdr_data, aes(x= goal_3_score, y = goal_4_score)) +
+  geom_point()
+```
+
+```{r}
+ggplot(data = sdr_data, aes(x= goal_3_score, y = goal_4_score, color = regions_used_for_the_sdr)) +
+  geom_point()
+```
+
+```{r}
+ggplot(data = sdr_data, aes(x= goal_3_score, y = goal_4_score, color = goal_5_score)) +
+  geom_point()
+```
+
+Challenge 1
+
+```{r}
+ggplot(sdr_data, aes(x= goal_3_score, y = country)) +
+  geom_bar(stat = "identity")
+```
+
+```{r}
+lac_sdr_data <- sdr_data %>% 
+  filter(regions_used_for_the_sdr == "LAC")
+
+ggplot(lac_sdr_data, aes(x= goal_3_score, y = country)) +
+  geom_bar(stat = "identity") 
+```
+
+```{r}
+ggplot(sdr_data, aes(x= goal_3_score, y = country)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~regions_used_for_the_sdr, scales = "free_y") + # faceting for regions
+  theme(axis.text.y = element_text(size = 4)) 
+```
+
+Challenge 2:
+
+```{r}
+ggplot(sdr_data, aes(x = goal_4_score)) +
+  geom_histogram()
+```
+
+```{r}
+ggplot(sdr_data, aes(x = goal_4_score, fill=regions_used_for_the_sdr)) + geom_histogram(bins=33, color="black")
+
+```
+
+Challenge 3:
+
+```{r}
+ggplot(sdr_data, aes(x = goal_12_score, fill=regions_used_for_the_sdr)) + geom_histogram(bins=33, color="black")
+```
+
+ Countries that fall in the higher end of the Goal 12 spectrum belong to the Sub-Saharan Africa region, while countries in the OECD lie towards the lower end. This is opposite of SDG goal number 4 shown above for Quality Education.
