@@ -11,7 +11,7 @@ library(tidyverse)
 library(here)
 library(janitor)
 
-install.packages("vembedr")
+
 library(vembedr)
 ```
 
@@ -40,6 +40,15 @@ ggplot(data = sdr_data, aes(x= goal_3_score, y = goal_4_score, color = goal_5_sc
 Challenge 1
 
 ```{r}
+ggplot(data = sdr_data, aes(x= goal_4_score, y = goal_7_score, color = goal_12_score)) +
+  geom_point()
+```
+
+Explanation:
+
+-   We do see in this graph that as all the goals increase in score, they all do it together except there is a little bit of an outlier when we see the darker dot, it is high for goal 4 but not goal 7 or goal 12 which is interesting.
+
+```{r}
 ggplot(sdr_data, aes(x= goal_3_score, y = country)) +
   geom_bar(stat = "identity")
 ```
@@ -60,6 +69,15 @@ ggplot(sdr_data, aes(x= goal_3_score, y = country)) +
 ```
 
 Challenge 2:
+
+```{r}
+MENA_sdr_data <- sdr_data %>% 
+  filter(regions_used_for_the_sdr == "MENA")
+
+
+ggplot(MENA_sdr_data, aes(x= goal_12_score, y = country)) +
+  geom_bar(stat = "identity") 
+```
 
 ```{r}
 ggplot(sdr_data, aes(x = goal_4_score)) +
