@@ -65,11 +65,18 @@ sdr_data %>%
 Challenge 2:
 
 ```{r}
-sdr_data %>% 
-  filter(regions_used_for_the_sdr == "Oceania")
+SDG_scores <- sdr_data %>%
+  select(goal_6_score, goal_8_score)
 ```
 
 Challenge 3:
+
+```{r}
+new_region <- sdr_data %>% 
+  filter(regions_used_for_the_sdr == "LAC")
+
+new_region
+```
 
 ```{r}
 oceania_data <- sdr_data %>% 
