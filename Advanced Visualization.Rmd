@@ -1,0 +1,145 @@
+---
+title: "Advanced Visualization"
+author: "Selena Buttery"
+date: "2025-04-10"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(plotly)
+library(rnaturalearth)
+library(leaflet)
+library(sf)
+library(vembedr)
+```
+
+```{r}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv")) 
+```
+
+.Cleaning column names
+
+```{r}
+sdr_data <- sdr_data %>% 
+  clean_names()
+```
+
+Customizing Histogram
+
+```{r}
+ggplot(sdr_data, aes(x = goal_4_score, fill=regions_used_for_the_sdr)) + geom_histogram()
+
+```
+
+Improvements
+
+```{r}
+ggplot(sdr_data, aes(x = goal_4_score, fill=regions_used_for_the_sdr)) +
+  geom_histogram() +
+  theme_minimal() +
+  scale_fill_viridis_d() +
+  labs(title = "Distributions of SDG 4 Scores",
+       x = "SDG 4 Score",
+       y = "Number of Countries",
+       fill = "Region")
+```
+
+### **Making static visualizations interactive**
+
+```{r}
+goal_4_histogram <- ggplot(sdr_data, aes(x = goal_4_score, fill=regions_used_for_the_sdr)) +
+  geom_histogram() +
+  theme_minimal() +
+  scale_fill_viridis_d() +
+  labs(title = "Distributions of SDG 4 Scores",
+       x = "SDG 4 Score",
+       y = "Number of Countries",
+       fill = "Region")
+
+ggplotly(goal_4_histogram)
+```
+
+Challenge 1:
+
+```{r}
+Challenge_Plot <- ggplot(data = sdr_data, aes(x= goal_3_score, y = goal_4_score, color = regions_used_for_the_sdr)) +
+  geom_point() +
+  theme_minimal() +
+   scale_fill_viridis_d() +
+   labs(title = "Distributions of SDG 4 and 5 Scores",
+       x = "SDG 3 Score",
+       y = "SDG 4 Score",
+       fill = "Region")
+
+ggplotly(Challenge_Plot)
+```
+
+### **Creating interactive maps with `leaflet`**
+
+```{r}
+install.packages("rnaturalearthdata")
+```
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+```
+
+```{r}
+world <- world %>% 
+  select(name_long, iso_a3, geometry)
+```
+
+```{r}
+colnames(sdr_data)[which(colnames(sdr_data) == "country_code_iso3")] <- "iso_a3"
+```
+
+```{r}
+sdr_data_world_joined <- left_join(sdr_data, world, by = "iso_a3")
+```
+
+```{r}
+class(sdr_data_world_joined)
+```
+
+```{r}
+sdr_data_world_joined <- st_as_sf(sdr_data_world_joined)
+
+class(sdr_data_world_joined)
+```
+
+```{r}
+sdr_data_world_joined <- st_transform(sdr_data_world_joined, "+proj=longlat +datum=WGS84")
+```
+
+```{r}
+mytext <- paste(
+    "Country: ", sdr_data_world_joined$country,"<br/>", 
+    "Goal 7 Score: ", round(sdr_data_world_joined$goal_7_score, 2), 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+leaflet(sdr_data_world_joined) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons(stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, color = ~colorQuantile("YlOrRd", goal_7_score)(goal_7_score), label = mytext)
+
+```
+
+Challenge 2: Changed to Goal 4 score and changed color palette to Purples
+
+```{r}
+challenge2 <- paste(
+    "Country: ", sdr_data_world_joined$country,"<br/>", 
+    "Goal 4 Score: ", round(sdr_data_world_joined$goal_7_score, 2), 
+    sep="") %>%
+  lapply(htmltools::HTML)
+
+leaflet(sdr_data_world_joined) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons(stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5, color = ~colorQuantile("Purples", goal_4_score)(goal_4_score), label = challenge2)
+```
