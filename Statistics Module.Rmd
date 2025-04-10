@@ -1,0 +1,99 @@
+---
+title: "Statistics Module"
+author: "Selena Buttery"
+date: "2025-04-10"
+output: html_document
+---
+
+Setup
+
+```{r}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
+```
+
+```{r}
+sdr_data <- sdr_data %>% 
+  clean_names()
+```
+
+Scatterplot from last lesson:
+
+```{r}
+ggplot(sdr_data, aes(x = goal_7_score, 
+                     y = goal_1_score)) +
+  geom_point() +
+  theme_minimal() 
+```
+
+Linear Regression:
+
+```{r}
+ggplot(sdr_data, aes(x = goal_7_score, 
+                     y = goal_1_score)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal() 
+
+```
+
+```{r}
+install.packages("ggpubr")  # if you haven't already
+library(ggpubr)
+library(ggplot2)
+```
+
+```{r}
+ggplot(sdr_data, aes(x = goal_7_score, 
+                     y = goal_1_score)) +
+  geom_point() +
+  geom_smooth() +
+  stat_cor() +
+  theme_minimal() 
+```
+
+Correlation Matrix
+
+```{r}
+sdr_scores <- sdr_data %>%
+  select(
+    goal_1_score, goal_2_score, goal_3_score, goal_4_score, goal_5_score,
+    goal_6_score, goal_7_score, goal_8_score, goal_9_score, goal_10_score,
+    goal_11_score, goal_12_score, goal_13_score, goal_14_score, goal_15_score,
+    goal_16_score, goal_17_score
+  )
+
+sdr_scores_matrix <- as.matrix(sdr_scores)
+
+cor <- cor(sdr_scores_matrix, use = "complete.obs")
+
+ggcorrplot(cor, method = "circle", type = "lower", lab = TRUE, lab_size = 2) +
+  theme(axis.text.y = element_text(size = 8),
+  axis.text.x = element_text(size = 8))
+
+
+```
+
+```{r}
+ggplot(sdr_data, aes(x = goal_12_score, 
+                     y = goal_9_score)) +
+  geom_point() +
+  geom_smooth() +
+  stat_cor() +
+  theme_minimal() 
+
+```
+
+Challenge 1:
+
+```{r}
+Challenge1 <- ggplot(sdr_data, aes(x = goal_1_score, 
+                     y = goal_4_score, label = country)) +
+  geom_point() +
+  geom_smooth() +
+  stat_cor() +
+  theme_minimal()
+
+ggplotly(Challenge1, tooltip = c("label", "x", "y"))
+```
+
+There seems to be a positive correlation between SDG 1 and SDG 4. This is likely because as poverty gets better, education generally will also improve. We see some outliers with countries like Mali, South Sudan, Niger, Dijbouti, and Venezuela. We see multiple points as listed before that don't follow the trend and there are honestly quite a few more than what I listed even.
