@@ -1,0 +1,195 @@
+---
+title: "Machine Learning"
+author: "Selena Buttery"
+format: html
+editor: visual
+---
+
+## Getting set up:
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(janitor)
+library(plotly)
+library(rnaturalearth)
+library(leaflet)
+library(sf)
+library(vembedr)
+library(ggplot2)
+library(naniar)
+library(missRanger)
+install.packages("missRanger")
+install.packages("factoextra")
+library(factoextra)
+library(randomForest)
+install.packages("randomForest")
+install.packages("pdp")
+library(pdp)
+```
+
+```{r}
+sdr_data <- read_csv(here("data/SDR-2023-Data.csv"))
+```
+
+Cleaning Data
+
+```{r}
+sdr_data <- sdr_data %>% 
+  clean_names()
+```
+
+Creating subset
+
+```{r}
+sdr_data_normalized_scores <- sdr_data %>% 
+  select(country, contains("normalized_score"))
+```
+
+Analyzing Missing Data
+
+```{r}
+206 * 99
+
+sum(is.na(sdr_data_normalized_scores))
+```
+
+```{r}
+gg_miss_var(sdr_data_normalized_scores, show_pct = TRUE) +
+  theme(axis.text.y = element_text(size = 8))
+```
+
+```{r}
+sdr_data_normalized_scores_longer <- sdr_data_normalized_scores %>% 
+  pivot_longer(cols = !country)
+```
+
+```{r}
+missing_data_by_country <- sdr_data_normalized_scores_longer %>%
+ group_by(country) %>%
+ miss_var_summary() %>% 
+ arrange(desc(pct_miss))
+
+missing_data_by_country
+```
+
+```{r}
+completely_na_countries  <- missing_data_by_country$country[missing_data_by_country$pct_miss == 100]
+completely_na_countries
+```
+
+Creating new dataframe
+
+```{r}
+sdr_data_normalized_scores_no_na_countries <- sdr_data_normalized_scores %>% 
+  filter(!country %in% completely_na_countries)
+```
+
+```{r}
+gg_miss_var(sdr_data_normalized_scores_no_na_countries, show_pct = TRUE) +
+  theme(axis.text.y = element_text(size = 8)) +
+  geom_hline(yintercept = 20, color = "steelblue", linetype = "dashed")
+```
+
+New dataframe
+
+```{r}
+sdr_data_normalized_scores_less_na <- sdr_data_normalized_scores_no_na_countries %>%
+  select(where(~ sum(is.na(.))/length(.) <= 0.2))
+```
+
+```{r}
+sdr_data_imputed <- missRanger(sdr_data_normalized_scores_less_na)
+```
+
+Clustering
+
+```{r}
+sdr_data_imputed <- sdr_data_imputed %>%
+  remove_rownames %>%
+  column_to_rownames(var="country")
+
+fviz_nbclust(sdr_data_imputed, kmeans, method = "silhouette")
+```
+
+```{r}
+k2 <- kmeans(sdr_data_imputed, centers = 2)
+
+fviz_cluster(k2, data = sdr_data_imputed) +
+  theme_minimal()
+```
+
+```{r}
+country_clusters <- as.data.frame(k2$cluster)
+```
+
+Random Forest Regression:
+
+```{r}
+rf_matmort <- randomForest(normalized_score_sdg3_matmort ~ .,
+                             data = sdr_data_imputed,
+                             importance = TRUE)
+
+rf_matmort
+```
+
+```{r}
+importance_df <- as.data.frame(rf_matmort$importance)
+```
+
+```{r}
+importance_df_top_10 <- importance_df %>%
+  rownames_to_column(var = "variable") %>%
+  slice_max(n = 10, order_by = `%IncMSE`)
+```
+
+Plotting 10 most important Variables
+
+```{r}
+ggplot(importance_df_top_10, aes(x = `%IncMSE`, y = reorder(variable, `%IncMSE`))) +
+  geom_bar(stat = "identity", fill = "steelblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Most Important Variables in Predicting Maternal Mortality",
+       subtitle = "Top 10",
+       y = "SDG Indicator",
+       x = "Feature Importance (% Increase in Mean Squared Error)")
+```
+
+```{r}
+pdp::partial(rf_matmort, pred.var = "normalized_score_sdg6_sanita", plot = TRUE)
+```
+
+```{r}
+pd <- pdp::partial(rf_matmort, pred.var = c("normalized_score_sdg6_sanita", "normalized_score_sdg3_u5mort"))
+# Default PDP
+plotPartial(pd)
+```
+
+## Challenge 1:
+
+Increasing clusters:
+
+```{r}
+k2 <- kmeans(sdr_data_imputed, centers = 4)
+
+fviz_cluster(k2, data = sdr_data_imputed) + theme_minimal()
+```
+
+## Challenge 2:
+
+editing code chunks
+
+```{r}
+rf_water <- randomForest(normalized_score_sdg6_water ~ ., data = sdr_data_imputed, importance = TRUE)
+```
+
+```{r}
+pdp::partial(rf_water, pred.var = "normalized_score_sdg6_water", plot = TRUE)
+```
+
+```{r}
+pd <- pdp::partial(rf_water, pred.var = c("normalized_score_sdg6_water", "normalized_score_sdg3_u5mort"))
+
+plotPartial(pd)
+```
